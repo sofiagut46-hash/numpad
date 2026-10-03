@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrono Pad: Rhythmic Forest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            user-select: none;
+        }
+        
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Allows clicks to pass through to the game */
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
+
+        .pointer-events-auto { pointer-events: auto; }
+        
+        /* Strict Glassmorphism: only blurs what's directly behind the panel */
+        .glass-panel {
+            background: rgba(15, 20, 30, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            transition: all 0.2s;
+        }
+        .glass-input:focus {
+            border-color: rgba(255, 255, 255, 0.8);
+            outline: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .glass-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .glass-btn:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.1);
+        }
+        .glass-btn:active { transform: translateY(1px); }
+        
+        #youtube-container { display: none; }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.3); transform: scale(1); }
+            50% { text-shadow: 0 0 25px rgba(255,255,255,0.8); transform: scale(1.05); }
+        }
+        .animate-pulse-glow { animation: pulse-glow 1.5s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <div id="hud-layer" class="ui-layer justify-between p-6 opacity-0 hidden">
+        <div class="flex justify-between items-start w-full">
+            <div class="glass-panel px-6 py-3 rounded-2xl pointer-events-auto">
+                <h1 class="text-xl font-extrabold tracking-widest text-white">CHRONO PAD</h1>
+                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Sharp Edition</p>
+            </div>
+            <div class="flex gap-4 pointer-events-auto">
+                <button id="btn-pause-hud" class="glass-panel glass-btn px-5 py-3 rounded-2xl text-xl flex items-center justify-center">
+                    ⏸
+                </button>
+                <div class="glass-panel px-6 py-3 rounded-2xl text-right min-w-[140px]">
+                    <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Score</p>
+                    <p class="text-4xl font-extrabold text-white leading-none" id="score-display">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex flex-col items-center justify-center mb-16">
+            <h2 id="status-text" class="text-5xl font-extrabold text-white mb-2 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl"></h2>
+            <p id="sub-status-text" class="text-sm tracking-widest text-gray-200 font-bold uppercase drop-shadow-md"></p>
+        </div>
+    </div>
+
+    <div id="menu-layer" class="ui-layer items-center justify-center pointer-events-auto z-50 transition-opacity duration-300">
+        <!-- NO BLUR ON OVERLAY -->
+        <div class="absolute inset-0 bg-black/60 pointer-events-none"></div>
+        
+        <div class="glass-panel p-10 rounded-3xl w-full max-w-md relative overflow-hidden pointer-events-auto">
+            <h2 class="text-4xl font-extrabold mb-2 text-center text-white tracking-widest drop-shadow-lg">CHRONO PAD</h2>
+            <p class="text-green-400 text-center mb-8 text-sm font-bold tracking-widest uppercase">Rhythmic Forest</p>
+            
+            <div class="space-y-5 mb-8">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">YouTube BGM URL</label>
+                    <input type="text" id="yt-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="Paste YouTube URL..." value="jfKfPfyJRdk">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">Game Speed (BPM)</label>
+                    <input type="number" id="bpm-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" value="110">
+                </div>
+            </div>
+            
+            <button id="btn-start" class="glass-btn w-full py-4 rounded-xl text-white font-bold tracking-widest uppercase text-sm">
+                Start Game (Num 5)
+            </button>
+            
+            <div class="mt-6 grid grid-cols-2 gap-2 text-center text-xs font-bold text-gray-400">
+                <span>8: Up (Green)</span>
+                <span>2: Down (Violet)</span>
+                <span>4: Left (Blue)</span>
+                <span>6: Right (Yellow)</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="pause-layer" class="ui-layer items-center justify-center pointer-events-auto z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="absolute inset-0 bg-black/70 pointer-events-none"></div>
+        
+        <div class="glass-panel p-10 rounded-3xl w-full max-w-sm text-center pointer-events-auto">
+            <h2 class="text-3xl font-extrabold mb-8 text-white tracking-widest drop-shadow-lg">PAUSED</h2>
+            <div class="space-y-4 flex flex-col">
+                <button id="btn-resume" class="glass-btn w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider text-white">Resume</button>
+                <button id="btn-restart" class="glass-btn w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider text-gray-200">Restart Level</button>
+                <button id="btn-change-song" class="glass-btn w-full py-3 rounded-xl text-sm font-bold uppercase tracking-wider text-red-400">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="youtube-container"><div id="yt-player"></div></div>
+
+    <script>
+        // State Machine
+        const STATE = { MENU: 0, WATCHING: 1, PLAYING: 2, GAME_OVER: 3, PAUSED: 4 };
+        let currentState = STATE.MENU;
+        let score = 0;
+        let sequence = [];
+        let playerStep = 0;
+        let currentBPM = 110;
+        let beatInterval = 60000 / currentBPM;
+        
+        // Pad Configuration - strictly mapping to numpad + color
+        const PAD_IDS = ['UP', 'LEFT', 'RIGHT', 'DOWN'];
+        const CONFIG = {
+            UP:    { code: 'Numpad8', color: 0x22c55e, alt: 'ArrowUp' },    // Green
+            LEFT:  { code: 'Numpad4', color: 0x3b82f6, alt: 'ArrowLeft' },  // Blue
+            RIGHT: { code: 'Numpad6', color: 0xeab308, alt: 'ArrowRight' }, // Yellow
+            DOWN:  { code: 'Numpad2', color: 0xa855f7, alt: 'ArrowDown' },  // Violet
+            CENTER:{ code: 'Numpad5', color: 0xffffff, alt: 'Enter' }       // White
+        };
+        const padData = {};
+        const activeGlows = {};
+        const glowTimeouts = {}; // Added to manage strict ON/OFF timing
+
+        // Audio System
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        const FREQS = { UP: 523.25, LEFT: 392.00, RIGHT: 659.25, DOWN: 329.63, CENTER: 880.00, FAIL: 150.00 };
+
+        function playTone(id, duration = 0.3) {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!FREQS[id]) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = id === 'FAIL' ? 'sawtooth' : 'triangle';
+            osc.frequency.setValueAtTime(FREQS[id], audioCtx.currentTime);
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        let ytPlayer;
+        let isYtReady = false;
+
+        window.onYouTubeIframeAPIReady = function() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '0', width: '0',
+                videoId: '',
+                playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
+                events: { 'onReady': () => { isYtReady = true; } }
+            });
+        };
+
+        function parseYouTubeID(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : url;
+        }
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = null; // STRICTLY NO FOG for maximum sharpness
+
+        // Isometric-style Camera
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 40, 30); // Raised and pulled back for perfect view
+        camera.lookAt(0, -2, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // EXACT pixel ratio for crispness
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Day / Night Cycle Configuration
+        // bg = Sky color, sun = Sun light color, ambient = Ambient light color
+        const skyGradients = [
+            { bg: 0x050814, sun: 0x334466, ambient: 0x0a1020, sunInt: 0.1, ambInt: 0.3 }, // Night
+            { bg: 0x3a1f2d, sun: 0xff8855, ambient: 0x2d1b2e, sunInt: 0.6, ambInt: 0.6 }, // Dawn
+            { bg: 0x2a598a, sun: 0xffffff, ambient: 0x4a6a8a, sunInt: 1.0, ambInt: 0.8 }, // Day
+            { bg: 0x4a2520, sun: 0xff4422, ambient: 0x301515, sunInt: 0.5, ambInt: 0.5 }  // Dusk
+        ];
+        
+        scene.background = new THREE.Color(skyGradients[0].bg);
+        const ambientLight = new THREE.AmbientLight(skyGradients[0].ambient, skyGradients[0].ambInt);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(skyGradients[0].sun, skyGradients[0].sunInt);
+        mainLight.position.set(20, 40, -20);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 100;
+        mainLight.shadow.camera.left = -25;
+        mainLight.shadow.camera.right = 25;
+        mainLight.shadow.camera.top = 25;
+        mainLight.shadow.camera.bottom = -25;
+        scene.add(mainLight);
+
+        const sceneGroup = new THREE.Group();
+        scene.add(sceneGroup);
+
+        const mats = {
+            terrain: new THREE.MeshStandardMaterial({ color: 0x242c38, flatShading: true, roughness: 0.9 }),
+            stage: new THREE.MeshStandardMaterial({ color: 0x313847, flatShading: true, roughness: 0.8 }),
+            wood: new THREE.MeshStandardMaterial({ color: 0x4a3219, flatShading: true, roughness: 1.0 }),
+            leaves: new THREE.MeshStandardMaterial({ color: 0x18593f, flatShading: true }),
+            rock: new THREE.MeshStandardMaterial({ color: 0x555e69, flatShading: true, roughness: 0.8 }),
+            mushroomStem: new THREE.MeshStandardMaterial({ color: 0xddddcc, flatShading: true }),
+            mushroomCap: new THREE.MeshStandardMaterial({ color: 0xd93838, flatShading: true }),
+            water: new THREE.MeshStandardMaterial({ color: 0x1f7df0, flatShading: true, transparent: true, opacity: 0.85 })
+        };
+
+        // Base Island
+        const islandGeo = new THREE.CylinderGeometry(26, 18, 14, 32, 3);
+        const posAttr = islandGeo.attributes.position;
+        const vertex = new THREE.Vector3();
+        for (let i = 0; i < posAttr.count; i++) {
+            vertex.fromBufferAttribute(posAttr, i);
+            if (vertex.y > 0) vertex.y += (Math.random() - 0.5) * 2.0; // Uneven top
+            posAttr.setXYZ(i, vertex.x, vertex.y, vertex.z);
+        }
+        islandGeo.computeVertexNormals();
+        const island = new THREE.Mesh(islandGeo, mats.terrain);
+        island.position.y = -7.5;
+        island.receiveShadow = true;
+        sceneGroup.add(island);
+
+        // Center Stage (Base for Arrows)
+        const stage = new THREE.Mesh(new THREE.CylinderGeometry(11, 12, 1.5, 16), mats.stage);
+        stage.position.y = -0.75;
+        stage.receiveShadow = true;
+        stage.castShadow = true;
+        sceneGroup.add(stage);
+
+        function randomEdgePos(minRadius, maxRadius) {
+            let angle = Math.random() * Math.PI * 2;
+            let radius = minRadius + Math.random() * (maxRadius - minRadius);
+            return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
+        }
+
+        // Pine Trees
+        for(let i=0; i<16; i++) {
+            const p = randomEdgePos(13, 24);
+            const tree = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 3, 5), mats.wood);
+            trunk.position.y = 1.5;
+            trunk.castShadow = true;
+            tree.add(trunk);
+            
+            for(let j=0; j<3; j++) {
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(4 - j*1, 5, 6), mats.leaves);
+                leaves.position.y = 3.5 + j*2.5;
+                leaves.castShadow = true;
+                leaves.receiveShadow = true;
+                leaves.rotation.set((Math.random()-0.5)*0.1, Math.random()*Math.PI, (Math.random()-0.5)*0.1);
+                tree.add(leaves);
+            }
+            tree.position.set(p.x, (Math.random()-0.5), p.z);
+            const scale = 0.5 + Math.random()*0.6;
+            tree.scale.set(scale, scale, scale);
+            sceneGroup.add(tree);
+        }
+
+        // Log Benches
+        for(let i=0; i<3; i++) {
+            const p = randomEdgePos(12, 16);
+            const bench = new THREE.Group();
+            
+            const log = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 4, 6), mats.wood);
+            log.rotation.z = Math.PI / 2;
+            log.position.y = 1.2;
+            log.castShadow = true;
+            bench.add(log);
+
+            const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1, 5), mats.wood);
+            leg1.position.set(-1.2, 0.5, 0);
+            leg1.castShadow = true;
+            bench.add(leg1);
+
+            const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1, 5), mats.wood);
+            leg2.position.set(1.2, 0.5, 0);
+            leg2.castShadow = true;
+            bench.add(leg2);
+
+            bench.position.set(p.x, 0, p.z);
+            bench.lookAt(0, 0, 0); // Face center
+            sceneGroup.add(bench);
+        }
+
+        // Low Poly Rocks
+        for(let i=0; i<8; i++) {
+            const p = randomEdgePos(12, 23);
+            const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5 + Math.random(), 0), mats.rock);
+            rock.position.set(p.x, 0.5, p.z);
+            rock.rotation.set(Math.random(), Math.random(), Math.random());
+            rock.scale.set(1, 0.6 + Math.random()*0.5, 1);
+            rock.castShadow = true;
+            sceneGroup.add(rock);
+        }
+
+        // Animated Geometric Mushrooms
+        const animatedMushrooms = [];
+        for(let i=0; i<12; i++) {
+            const p = randomEdgePos(11, 20);
+            const shroom = new THREE.Group();
+            
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.2, 5), mats.mushroomStem);
+            stem.position.y = 0.6;
+            stem.castShadow = true;
+            shroom.add(stem);
+
+            const cap = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1, 6), mats.mushroomCap);
+            cap.position.y = 1.2;
+            cap.castShadow = true;
+            shroom.add(cap);
+
+            shroom.position.set(p.x, 0, p.z);
+            shroom.rotation.set((Math.random()-0.5)*0.2, Math.random()*Math.PI, (Math.random()-0.5)*0.2);
+            sceneGroup.add(shroom);
+            animatedMushrooms.push(shroom);
+        }
+
+        // Waterfall
+        const waterfall = new THREE.Mesh(new THREE.BoxGeometry(6, 16, 2), mats.water);
+        waterfall.position.set(-18, -6, -15);
+        waterfall.rotation.y = Math.PI / 4;
+        sceneGroup.add(waterfall);
+
+        function createArrowGeometry() {
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 2.2);
+            shape.lineTo(2.6, -0.8);
+            shape.lineTo(1.3, -0.8);
+            shape.lineTo(0, 0.8);
+            shape.lineTo(-1.3, -0.8);
+            shape.lineTo(-2.6, -0.8);
+            shape.closePath();
+            return new THREE.ExtrudeGeometry(shape, { depth: 0.5, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.15, bevelThickness: 0.15 });
+        }
+        const arrowGeo = createArrowGeometry();
+
+        function createPad(id, x, z, rotY, configItem) {
+            // CRITICAL: Materials are dark by default. emissiveIntensity is 0.
+            const mat = new THREE.MeshStandardMaterial({
+                color: configItem.color,
+                emissive: configItem.color,
+                emissiveIntensity: 0.0, // Dark by default
+                roughness: 0.3,
+                metalness: 0.1,
+                flatShading: true
+            });
+
+            const mesh = new THREE.Mesh(arrowGeo, mat);
+            mesh.position.set(x, 0.3, z);
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.rotation.z = rotY;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            sceneGroup.add(mesh);
+
+            // Light is OFF by default (intensity 0)
+            const pLight = new THREE.PointLight(configItem.color, 0, 20);
+            pLight.position.set(x, 2, z);
+            sceneGroup.add(pLight);
+
+            padData[id] = { mesh, mat, light: pLight, baseColor: configItem.color };
+            activeGlows[id] = 0;
+        }
+
+        // Pad layout
+        createPad('UP', 0, -5.5, 0, CONFIG.UP);
+        createPad('DOWN', 0, 5.5, Math.PI, CONFIG.DOWN);
+        createPad('LEFT', -5.5, 0, Math.PI / 2, CONFIG.LEFT);
+        createPad('RIGHT', 5.5, 0, -Math.PI / 2, CONFIG.RIGHT);
+
+        // Center Start Button
+        const centerMat = new THREE.MeshStandardMaterial({ color: 0x888888, emissive: 0xffffff, emissiveIntensity: 0.0, roughness: 0.4, flatShading: true });
+        const centerMesh = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 0.6, 8), centerMat);
+        centerMesh.position.set(0, 0.3, 0);
+        centerMesh.castShadow = true;
+        sceneGroup.add(centerMesh);
+        
+        const centerLight = new THREE.PointLight(0xffffff, 0, 15);
+        centerLight.position.set(0, 2, 0);
+        sceneGroup.add(centerLight);
+        
+        padData['CENTER'] = { mesh: centerMesh, mat: centerMat, light: centerLight, baseColor: 0xffffff };
+        activeGlows['CENTER'] = 0;
+
+        // Floating Dust/Fireflies
+        const particlesCount = 300;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i=0; i<particlesCount; i++) {
+            posArray[i*3] = (Math.random() - 0.5) * 50;
+            posArray[i*3+1] = Math.random() * 20 - 5;
+            posArray[i*3+2] = (Math.random() - 0.5) * 50;
+        }
+        const particlesGeo = new THREE.BufferGeometry();
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({ size: 0.25, color: 0xfff0aa, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
+        const particleSystem = new THREE.Points(particlesGeo, particlesMat);
+        sceneGroup.add(particleSystem);
+
+        function uiSetStatus(main, sub = "", colorClass = "text-white") {
+            const st = document.getElementById('status-text');
+            st.innerText = main;
+            st.className = `text-5xl font-extrabold mb-2 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl ${colorClass}`;
+            document.getElementById('sub-status-text').innerText = sub;
+        }
+
+        function toggleLayer(id, show) {
+            const el = document.getElementById(id);
+            if(show) {
+                el.classList.remove('hidden');
+                void el.offsetWidth; // Force reflow
+                el.style.opacity = '1';
+            } else {
+                el.style.opacity = '0';
+                setTimeout(() => el.classList.add('hidden'), 300);
+            }
+        }
+
+        function triggerPadVisuals(id, durationMs) {
+            // Strict ON state
+            activeGlows[id] = 1.0; 
+            if(padData[id]) padData[id].mesh.position.y = -0.2; // Push down effect
+
+            // Clear any previous timeout to avoid flickering
+            if (glowTimeouts[id]) clearTimeout(glowTimeouts[id]);
+            
+            // Strict OFF state after the rhythmic duration
+            glowTimeouts[id] = setTimeout(() => {
+                activeGlows[id] = 0.0;
+            }, durationMs || (beatInterval * 0.5));
+        }
+
+        function initGame() {
+            if(currentState === STATE.PAUSED) return;
+            
+            const ytVal = document.getElementById('yt-input').value;
+            currentBPM = parseInt(document.getElementById('bpm-input').value) || 110;
+            beatInterval = 60000 / currentBPM;
+
+            if(isYtReady && ytVal) {
+                const vidId = parseYouTubeID(ytVal);
+                ytPlayer.loadVideoById(vidId);
+                ytPlayer.playVideo();
+            }
+
+            score = 0;
+            sequence = [];
+            document.getElementById('score-display').innerText = score;
+            
+            toggleLayer('menu-layer', false);
+            toggleLayer('pause-layer', false);
+            toggleLayer('hud-layer', true);
+            
+            currentState = STATE.WATCHING;
+            uiSetStatus("READY", "Prepare Numpad", "text-white");
+            
+            // Wait 2 beats before starting the first round
+            setTimeout(startRound, beatInterval * 2);
+        }
+
+        let sequencePlaybackTimer;
+
+        function startRound() {
+            playerStep = 0;
+            sequence.push(PAD_IDS[Math.floor(Math.random() * PAD_IDS.length)]);
+            currentState = STATE.WATCHING;
+            uiSetStatus("WATCH", "Memorize", "text-blue-400");
+
+            let i = 0;
+            const flashDuration = beatInterval * 0.5; // Flash lasts half a beat
+            
+            // Wait one beat before the sequence starts playing
+            setTimeout(() => {
+                sequencePlaybackTimer = setInterval(() => {
+                    if (currentState !== STATE.WATCHING) {
+                        clearInterval(sequencePlaybackTimer);
+                        return;
+                    }
+                    
+                    if (i < sequence.length) {
+                        const padId = sequence[i];
+                        triggerPadVisuals(padId, flashDuration);
+                        playTone(padId, flashDuration / 1000);
+                        i++;
+                    } else {
+                        clearInterval(sequencePlaybackTimer);
+                        // Transition to player turn after finishing
+                        setTimeout(() => {
+                            if (currentState === STATE.WATCHING) {
+                                currentState = STATE.PLAYING;
+                                uiSetStatus("YOUR TURN", "Repeat Sequence", "text-green-400");
+                            }
+                        }, beatInterval * 0.5);
+                    }
+                }, beatInterval); // Exactly syncs with BPM
+            }, beatInterval);
+        }
+
+        function gameOver() {
+            currentState = STATE.GAME_OVER;
+            uiSetStatus("SIGNAL LOST", "Press Num 5 to Restart", "text-red-500");
+            playTone('FAIL', 1.0);
+            if(isYtReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+            
+            // Flash all pads red
+            Object.values(padData).forEach(p => {
+                p.light.color.setHex(0xff0000);
+                p.light.intensity = 15;
+                p.mat.emissive.setHex(0xff0000);
+                p.mat.emissiveIntensity = 2.0;
+            });
+            setTimeout(() => {
+                // Reset colors back to normal
+                Object.keys(padData).forEach(id => {
+                    padData[id].light.color.setHex(padData[id].baseColor);
+                    padData[id].mat.emissive.setHex(padData[id].baseColor);
+                    activeGlows[id] = 0; // Turn off light
+                });
+            }, 800);
+        }
+
+        function handleInput(id) {
+            if (id === 'CENTER') {
+                triggerPadVisuals(id, 200);
+                playTone(id, 0.2);
+                if (currentState === STATE.MENU || currentState === STATE.GAME_OVER) {
+                    if (!audioCtx) audioCtx = new AudioContext();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    initGame();
+                }
+                return;
+            }
+
+            if (currentState !== STATE.PLAYING) return;
+            
+            // Visual and audio feedback strictly tied to rhythm
+            const flashDuration = beatInterval * 0.5;
+            triggerPadVisuals(id, flashDuration);
+            playTone(id, flashDuration / 1000);
+
+            if (sequence[playerStep] === id) {
+                playerStep++;
+                if (playerStep === sequence.length) {
+                    currentState = STATE.WATCHING;
+                    score++;
+                    document.getElementById('score-display').innerText = score;
+                    uiSetStatus("PERFECT", "Wait...", "text-yellow-400");
+                    // Wait before starting next round to keep rhythm
+                    setTimeout(startRound, beatInterval * 1.5);
+                }
+            } else {
+                gameOver();
+            }
+        }
+
+        function togglePause() {
+            if (currentState === STATE.MENU || currentState === STATE.GAME_OVER) return;
+            
+            if (currentState === STATE.PAUSED) {
+                toggleLayer('pause-layer', false);
+                if(isYtReady && ytPlayer.playVideo) ytPlayer.playVideo();
+                currentState = STATE.PLAYING;
+                uiSetStatus("RESUMED", "Follow rhythm", "text-green-400");
+            } else {
+                currentState = STATE.PAUSED;
+                toggleLayer('pause-layer', true);
+                if(isYtReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
+                clearInterval(sequencePlaybackTimer);
+                uiSetStatus("PAUSED", "", "text-gray-400");
+            }
+        }
+
+        document.getElementById('btn-start').addEventListener('click', () => { 
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            initGame(); 
+        });
+        document.getElementById('btn-pause-hud').addEventListener('click', togglePause);
+        document.getElementById('btn-resume').addEventListener('click', togglePause);
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            toggleLayer('pause-layer', false);
+            currentState = STATE.MENU;
+            initGame();
+        });
+        document.getElementById('btn-change-song').addEventListener('click', () => {
+            if(isYtReady && ytPlayer.stopVideo) ytPlayer.stopVideo();
+            toggleLayer('pause-layer', false);
+            toggleLayer('hud-layer', false);
+            toggleLayer('menu-layer', true);
+            currentState = STATE.MENU;
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            if (e.code === 'Escape') { togglePause(); return; }
+            if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+
+            let matchedId = null;
+            for (const [id, config] of Object.entries(CONFIG)) {
+                if (e.code === config.code || e.code === config.alt) {
+                    matchedId = id;
+                    break;
+                }
+            }
+            if (matchedId) handleInput(matchedId);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+        const c1 = new THREE.Color();
+        const c2 = new THREE.Color();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+
+            // Smooth Day/Night Cycle interpolation
+            const cycleDuration = 100; // 100 seconds per full cycle
+            const cycleTime = (time % cycleDuration) / cycleDuration;
+            const segment = cycleTime * 4;
+            const idx1 = Math.floor(segment) % 4;
+            const idx2 = (idx1 + 1) % 4;
+            const lerpFactor = segment - Math.floor(segment);
+
+            const env1 = skyGradients[idx1];
+            const env2 = skyGradients[idx2];
+
+            scene.background.copy(c1.setHex(env1.bg)).lerp(c2.setHex(env2.bg), lerpFactor);
+            ambientLight.color.copy(c1.setHex(env1.ambient)).lerp(c2.setHex(env2.ambient), lerpFactor);
+            ambientLight.intensity = env1.ambInt + (env2.ambInt - env1.ambInt) * lerpFactor;
+            mainLight.color.copy(c1.setHex(env1.sun)).lerp(c2.setHex(env2.sun), lerpFactor);
+            mainLight.intensity = env1.sunInt + (env2.sunInt - env1.sunInt) * lerpFactor;
+            
+            // Rotating Sun position
+            const sunAngle = cycleTime * Math.PI * 2;
+            mainLight.position.x = Math.cos(sunAngle) * 40;
+            mainLight.position.y = Math.sin(sunAngle) * 30 + 10;
+            mainLight.position.z = Math.sin(sunAngle) * -20;
+
+            // Subtle Island Float
+            sceneGroup.position.y = Math.sin(time * 0.8) * 0.3;
+
+            // Animate Mushrooms Breathing
+            animatedMushrooms.forEach((shroom, i) => {
+                shroom.scale.y = 1.0 + Math.sin(time * 2.5 + i) * 0.15;
+            });
+
+            // Particles Drift
+            const positions = particleSystem.geometry.attributes.position.array;
+            for(let i = 0; i < particlesCount; i++) {
+                let iy = i * 3 + 1;
+                positions[iy] += delta * 1.5;
+                positions[i*3] += Math.sin(time + positions[iy]) * 0.01;
+                positions[i*3+2] += Math.cos(time + positions[iy]) * 0.01;
+                if(positions[iy] > 15) positions[iy] = -5;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            // Pad Glowing & Physics Logic (CRITICAL FIX)
+            for (let id in padData) {
+                const mat = padData[id].mat;
+                const light = padData[id].light;
+
+                if (activeGlows[id] > 0) {
+                    // Intense glow when explicitly active
+                    mat.emissiveIntensity = 3.0; 
+                    light.intensity = 25; 
+                } else {
+                    // Completely OFF when inactive
+                    mat.emissiveIntensity = 0;
+                    light.intensity = 0;
+                }
+                
+                // Spring back up smoothly if pushed down
+                const targetY = 0.3;
+                padData[id].mesh.position.y += (targetY - padData[id].mesh.position.y) * 0.2;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = animate;
+    </script>
+</body>
+</html>
