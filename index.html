@@ -47,16 +47,20 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
         }
 
-        .glass-input {
+        .glass-input, .glass-select {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             transition: all 0.2s;
         }
-        .glass-input:focus {
+        .glass-input:focus, .glass-select:focus {
             border-color: rgba(255, 255, 255, 0.8);
             outline: none;
             box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+        .glass-select option {
+            background-color: #0f141e;
+            color: white;
         }
 
         .glass-btn {
@@ -72,7 +76,13 @@
         }
         .glass-btn:active { transform: translateY(1px); }
         
-        #youtube-container { display: none; }
+        #youtube-container { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            opacity: 0;
+            pointer-events: none;
+        }
 
         @keyframes pulse-glow {
             0%, 100% { text-shadow: 0 0 10px rgba(255,255,255,0.3); transform: scale(1); }
@@ -80,20 +90,20 @@
         }
         .animate-pulse-glow { animation: pulse-glow 1.5s infinite ease-in-out; }
 
-        /* DDR / Scrolling Highway Styles - Pure Glass Transparency */
+        /* RHYTHM HIGHWAY (DDR STYLE) - PURE GLASS TRANSPARENCY */
         #rhythm-highway {
             position: absolute;
-            top: 20px;
+            top: 25px;
             left: 30px;
             width: 280px;
-            height: calc(100vh - 40px);
+            height: calc(100vh - 50px);
             pointer-events: none;
             z-index: 15;
         }
 
         .target-receptors {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 0;
             width: 100%;
             display: flex;
@@ -181,7 +191,7 @@
         /* Floating Rating Feedback Text */
         .hit-rating {
             position: absolute;
-            top: 90px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 24px;
@@ -199,7 +209,7 @@
 </head>
 <body>
 
-    <!-- RHYTHM HIGHWAY (DDR STYLE OVERLAY - NO BACKGROUND) -->
+    <!-- RHYTHM HIGHWAY (DDR STYLE OVERLAY) -->
     <div id="rhythm-highway">
         <div class="target-receptors">
             <div class="receptor" data-pad="LEFT">
@@ -219,17 +229,21 @@
         <div id="rating-container"></div>
     </div>
 
+    <!-- HUD LAYER - MOVED DOWN AND SHIFTED TO AVOID OVERLAPPING THE ARROWS -->
     <div id="hud-layer" class="ui-layer justify-between p-6 opacity-0 hidden">
         <div class="flex justify-between items-start w-full">
-            <div class="glass-panel px-6 py-3 rounded-2xl pointer-events-auto ml-auto md:ml-0">
+            <!-- Title Panel Offset to the Right of the Rhythm Highway -->
+            <div class="glass-panel px-6 py-3 rounded-2xl pointer-events-auto ml-[330px]">
                 <h1 class="text-xl font-extrabold tracking-widest text-white">CHRONO PAD</h1>
                 <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Rhythm Highway Edition</p>
             </div>
+            
+            <!-- Pause and Score Panel Positioned Comfortably Top Right -->
             <div class="flex gap-4 pointer-events-auto">
                 <button id="btn-pause-hud" class="glass-panel glass-btn px-5 py-3 rounded-2xl text-xl flex items-center justify-center">
                     ⏸
                 </button>
-                <div class="glass-panel px-6 py-3 rounded-2xl text-right min-w-[140px]">
+                <div class="glass-panel px-6 py-3 rounded-2xl text-right min-w-[150px]">
                     <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Score</p>
                     <p class="text-4xl font-extrabold text-white leading-none" id="score-display">0</p>
                     <p class="text-xs font-bold text-green-400 mt-1 uppercase tracking-wider" id="combo-display">Combo 0x</p>
@@ -237,35 +251,49 @@
             </div>
         </div>
         
-        <div class="flex flex-col items-center justify-center mb-16">
-            <h2 id="status-text" class="text-5xl font-extrabold text-white mb-2 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl"></h2>
-            <p id="sub-status-text" class="text-sm tracking-widest text-gray-200 font-bold uppercase drop-shadow-md"></p>
+        <!-- Status Indicator Placed Lower in Center -->
+        <div class="flex flex-col items-center justify-center mb-10">
+            <h2 id="status-text" class="text-4xl font-extrabold text-white mb-1 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl"></h2>
+            <p id="sub-status-text" class="text-xs tracking-widest text-gray-200 font-bold uppercase drop-shadow-md"></p>
         </div>
     </div>
 
+    <!-- MAIN MENU LAYER WITH DIFFICULTY SELECTOR -->
     <div id="menu-layer" class="ui-layer items-center justify-center pointer-events-auto z-50 transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/60 pointer-events-none"></div>
         
-        <div class="glass-panel p-10 rounded-3xl w-full max-w-md relative overflow-hidden pointer-events-auto">
-            <h2 class="text-4xl font-extrabold mb-2 text-center text-white tracking-widest drop-shadow-lg">CHRONO PAD</h2>
-            <p class="text-green-400 text-center mb-8 text-sm font-bold tracking-widest uppercase">Rhythmic Forest DDR</p>
+        <div class="glass-panel p-8 rounded-3xl w-full max-w-md relative overflow-hidden pointer-events-auto">
+            <h2 class="text-4xl font-extrabold mb-1 text-center text-white tracking-widest drop-shadow-lg">CHRONO PAD</h2>
+            <p class="text-green-400 text-center mb-6 text-sm font-bold tracking-widest uppercase">Rhythmic Forest DDR</p>
             
-            <div class="space-y-5 mb-8">
+            <div class="space-y-4 mb-6">
                 <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">YouTube BGM URL</label>
-                    <input type="text" id="yt-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="Paste YouTube URL..." value="jfKfPfyJRdk">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-1">YouTube BGM URL or ID</label>
+                    <input type="text" id="yt-input" class="glass-input w-full px-4 py-2.5 rounded-xl text-sm" placeholder="Paste YouTube URL or ID..." value="https://www.youtube.com/watch?v=jfKfPfyJRdk">
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">Game Speed (BPM)</label>
-                    <input type="number" id="bpm-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" value="120">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-1">Game Speed (BPM)</label>
+                        <input type="number" id="bpm-input" class="glass-input w-full px-4 py-2.5 rounded-xl text-sm" value="120">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-1">Difficulty</label>
+                        <select id="difficulty-input" class="glass-select w-full px-4 py-2.5 rounded-xl text-sm font-bold">
+                            <option value="easy">Easy (Lento)</option>
+                            <option value="medium" selected>Medium (Normal)</option>
+                            <option value="hard">Hard (Rápido)</option>
+                            <option value="expert">Expert (Extremo)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
-            <button id="btn-start" class="glass-btn w-full py-4 rounded-xl text-white font-bold tracking-widest uppercase text-sm">
+            <button id="btn-start" class="glass-btn w-full py-3.5 rounded-xl text-white font-bold tracking-widest uppercase text-sm">
                 Start Game (Num 5)
             </button>
             
-            <div class="mt-6 grid grid-cols-2 gap-2 text-center text-xs font-bold text-gray-400">
+            <div class="mt-5 grid grid-cols-2 gap-2 text-center text-xs font-bold text-gray-400">
                 <span>8 / 🠉: Up (Green)</span>
                 <span>2 / 🠋: Down (Violet)</span>
                 <span>4 / 🠈: Left (Blue)</span>
@@ -274,6 +302,7 @@
         </div>
     </div>
 
+    <!-- PAUSE MENU -->
     <div id="pause-layer" class="ui-layer items-center justify-center pointer-events-auto z-50 hidden opacity-0 transition-opacity duration-300">
         <div class="absolute inset-0 bg-black/70 pointer-events-none"></div>
         
@@ -299,7 +328,17 @@
         let currentBPM = 120;
         let beatInterval = 60000 / currentBPM;
         
-        // Pad Configuration & Arrow mapping
+        // Difficulty Presets
+        let NOTE_SPEED = 0.45; // Pixels per millisecond
+        let spawnMultiplier = 1; // Controls note density
+        const DIFFICULTY_SETTINGS = {
+            easy:   { speed: 0.32, spawnIntervalMult: 1.5 },
+            medium: { speed: 0.45, spawnIntervalMult: 1.0 },
+            hard:   { speed: 0.60, spawnIntervalMult: 0.75 },
+            expert: { speed: 0.80, spawnIntervalMult: 0.5 }
+        };
+
+        // Pad Configuration
         const PAD_IDS = ['LEFT', 'DOWN', 'UP', 'RIGHT'];
         const PAD_X_POS = { LEFT: 0, DOWN: 74, UP: 148, RIGHT: 222 };
         const CONFIG = {
@@ -313,14 +352,12 @@
         const activeGlows = {};
         const glowTimeouts = {};
 
-        // Rhythm Game Engine Logic Variables
+        // Engine Variables
         let activeNotes = [];
         let noteIdCounter = 0;
         let lastSpawnTime = 0;
-        let songStartTime = 0;
-        const TARGET_Y = 20; // Top position of receptors in px
+        const TARGET_Y = 35; // Top position of receptors in px
         const SPAWN_Y = window.innerHeight - 80; // Bottom spawn point
-        const NOTE_SPEED = 0.45; // Pixels per millisecond
 
         // Audio System
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -347,25 +384,60 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
+        // YouTube Audio Engine
         let ytPlayer;
         let isYtReady = false;
 
         window.onYouTubeIframeAPIReady = function() {
             ytPlayer = new YT.Player('yt-player', {
-                height: '0', width: '0',
-                videoId: '',
-                playerVars: { 'autoplay': 0, 'controls': 0, 'disablekb': 1 },
-                events: { 'onReady': () => { isYtReady = true; } }
+                height: '0', 
+                width: '0',
+                videoId: 'jfKfPfyJRdk',
+                playerVars: { 
+                    'autoplay': 0, 
+                    'controls': 0, 
+                    'disablekb': 1,
+                    'playsinline': 1,
+                    'enablejsapi': 1
+                },
+                events: { 
+                    'onReady': () => { isYtReady = true; },
+                    'onStateChange': (e) => {
+                        // Ensure video loops if ended
+                        if (e.data === YT.PlayerState.ENDED && currentState === STATE.PLAYING) {
+                            ytPlayer.playVideo();
+                        }
+                    }
+                }
             });
         };
 
         function parseYouTubeID(url) {
+            if(!url) return 'jfKfPfyJRdk';
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             return (match && match[2].length === 11) ? match[2] : url;
         }
 
-        // 3D Scene Initialization
+        function playYouTubeAudio() {
+            if (!isYtReady || !ytPlayer) return;
+            const ytVal = document.getElementById('yt-input').value;
+            const vidId = parseYouTubeID(ytVal);
+            
+            try {
+                if (ytPlayer.getVideoData && ytPlayer.getVideoData().video_id !== vidId) {
+                    ytPlayer.loadVideoById(vidId);
+                } else {
+                    ytPlayer.playVideo();
+                }
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+            } catch(e) {
+                console.log("YouTube Playback error:", e);
+            }
+        }
+
+        // 3D Scene Setup
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.fog = null;
@@ -434,7 +506,7 @@
         island.receiveShadow = true;
         sceneGroup.add(island);
 
-        // Center Stage
+        // Stage
         const stage = new THREE.Mesh(new THREE.CylinderGeometry(11, 12, 1.5, 16), mats.stage);
         stage.position.y = -0.75;
         stage.receiveShadow = true;
@@ -447,7 +519,7 @@
             return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
         }
 
-        // Environment Details (Trees, Rocks, Mushrooms)
+        // Trees & Rocks
         for(let i=0; i<16; i++) {
             const p = randomEdgePos(13, 24);
             const tree = new THREE.Group();
@@ -578,7 +650,7 @@
         function uiSetStatus(main, sub = "", colorClass = "text-white") {
             const st = document.getElementById('status-text');
             st.innerText = main;
-            st.className = `text-5xl font-extrabold mb-2 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl ${colorClass}`;
+            st.className = `text-4xl font-extrabold mb-1 animate-pulse-glow tracking-[0.2em] uppercase text-center drop-shadow-2xl ${colorClass}`;
             document.getElementById('sub-status-text').innerText = sub;
         }
 
@@ -603,7 +675,6 @@
                 activeGlows[id] = 0.0;
             }, durationMs || 200);
 
-            // Trigger UI Receptor Glow
             const receptor = document.querySelector(`.receptor[data-pad="${id}"]`);
             if (receptor) {
                 receptor.classList.add('active');
@@ -623,15 +694,20 @@
         function initGame() {
             if(currentState === STATE.PAUSED) return;
             
-            const ytVal = document.getElementById('yt-input').value;
-            currentBPM = parseInt(document.getElementById('bpm-input').value) || 120;
-            beatInterval = 60000 / currentBPM;
+            // Resume Audio Context
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
-            if(isYtReady && ytVal) {
-                const vidId = parseYouTubeID(ytVal);
-                ytPlayer.loadVideoById(vidId);
-                ytPlayer.playVideo();
-            }
+            // Set difficulty parameters
+            const diffKey = document.getElementById('difficulty-input').value;
+            const diffSetting = DIFFICULTY_SETTINGS[diffKey] || DIFFICULTY_SETTINGS.medium;
+            NOTE_SPEED = diffSetting.speed;
+            spawnMultiplier = diffSetting.spawnIntervalMult;
+
+            currentBPM = parseInt(document.getElementById('bpm-input').value) || 120;
+            beatInterval = (60000 / currentBPM) * spawnMultiplier;
+
+            playYouTubeAudio();
 
             score = 0;
             combo = 0;
@@ -646,12 +722,10 @@
             toggleLayer('hud-layer', true);
             
             currentState = STATE.PLAYING;
-            uiSetStatus("PLAYING", "Follow the Rhythm", "text-green-400");
-            songStartTime = performance.now();
-            lastSpawnTime = songStartTime;
+            uiSetStatus("PLAYING", `Difficulty: ${diffKey.toUpperCase()}`, "text-green-400");
+            lastSpawnTime = performance.now();
         }
 
-        // SVG Icons per direction
         const SVG_PATHS = {
             LEFT: '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>',
             DOWN: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>',
@@ -688,8 +762,6 @@
                 triggerPadVisuals(padId, 200);
                 playTone(padId, 0.2);
                 if (currentState === STATE.MENU || currentState === STATE.GAME_OVER) {
-                    if (!audioCtx) audioCtx = new AudioContext();
-                    if (audioCtx.state === 'suspended') audioCtx.resume();
                     initGame();
                 }
                 return;
@@ -700,7 +772,6 @@
             triggerPadVisuals(padId, 150);
 
             const now = performance.now();
-            // Find closest matching unhit note for this pad
             let closestNote = null;
             let minDiff = Infinity;
 
@@ -714,7 +785,7 @@
                 }
             }
 
-            if (closestNote && minDiff < 180) { // Timing Window threshold
+            if (closestNote && minDiff < 180) {
                 closestNote.hit = true;
                 closestNote.element.remove();
 
@@ -735,7 +806,6 @@
                 document.getElementById('score-display').innerText = score;
                 document.getElementById('combo-display').innerText = `Combo ${combo}x`;
             } else {
-                // Mispress or bad timing
                 combo = 0;
                 document.getElementById('combo-display').innerText = `Combo ${combo}x`;
             }
@@ -757,11 +827,7 @@
             }
         }
 
-        document.getElementById('btn-start').addEventListener('click', () => { 
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            initGame(); 
-        });
+        document.getElementById('btn-start').addEventListener('click', initGame);
         document.getElementById('btn-pause-hud').addEventListener('click', togglePause);
         document.getElementById('btn-resume').addEventListener('click', togglePause);
         document.getElementById('btn-restart').addEventListener('click', () => {
@@ -808,15 +874,12 @@
             const delta = clock.getDelta();
             const now = performance.now();
 
-            // DDR Rhythm Note Update & Spawning Logic
             if (currentState === STATE.PLAYING) {
-                // Spawn notes aligned with BPM rhythm
                 if (now - lastSpawnTime >= beatInterval) {
                     spawnNote();
                     lastSpawnTime = now;
                 }
 
-                // Move active floating notes up towards receptors
                 for (let i = activeNotes.length - 1; i >= 0; i--) {
                     const note = activeNotes[i];
                     if (note.hit) continue;
@@ -826,7 +889,6 @@
                     
                     note.element.style.top = `${currentY}px`;
 
-                    // Handle Miss (note travels too far past receptor)
                     if (currentY < TARGET_Y - 50) {
                         displayHitRating("MISS", "text-red-500");
                         combo = 0;
@@ -837,7 +899,7 @@
                 }
             }
 
-            // Day / Night Environment Cycle
+            // Environment Day/Night Cycle
             const cycleDuration = 100;
             const cycleTime = (time % cycleDuration) / cycleDuration;
             const segment = cycleTime * 4;
@@ -875,7 +937,7 @@
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;
 
-            // 3D Pad Glowing Logic
+            // 3D Pad Glowing Updates
             for (let id in padData) {
                 const mat = padData[id].mat;
                 const light = padData[id].light;
