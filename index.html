@@ -31,7 +31,7 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 10;
-            pointer-events: none; /* Allows clicks to pass through to the game */
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             transition: opacity 0.3s ease;
@@ -39,7 +39,6 @@
 
         .pointer-events-auto { pointer-events: auto; }
         
-        /* Strict Glassmorphism: only blurs what's directly behind the panel */
         .glass-panel {
             background: rgba(15, 20, 30, 0.7);
             backdrop-filter: blur(12px);
@@ -80,15 +79,151 @@
             50% { text-shadow: 0 0 25px rgba(255,255,255,0.8); transform: scale(1.05); }
         }
         .animate-pulse-glow { animation: pulse-glow 1.5s infinite ease-in-out; }
+
+        /* DDR / Scrolling Highway Styles - Pure Glass Transparency */
+        #rhythm-highway {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            width: 280px;
+            height: calc(100vh - 40px);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .target-receptors {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .receptor {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.08s ease, border-color 0.1s, box-shadow 0.1s, background-color 0.1s;
+        }
+
+        .receptor svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Receptor colors (Outlines) */
+        .receptor[data-pad="LEFT"] { border-color: rgba(59, 130, 246, 0.6); }
+        .receptor[data-pad="LEFT"] svg { stroke: #3b82f6; }
+        
+        .receptor[data-pad="DOWN"] { border-color: rgba(168, 85, 247, 0.6); }
+        .receptor[data-pad="DOWN"] svg { stroke: #a855f7; }
+
+        .receptor[data-pad="UP"] { border-color: rgba(34, 197, 94, 0.6); }
+        .receptor[data-pad="UP"] svg { stroke: #22c55e; }
+
+        .receptor[data-pad="RIGHT"] { border-color: rgba(234, 179, 8, 0.6); }
+        .receptor[data-pad="RIGHT"] svg { stroke: #eab308; }
+
+        /* Active Receptor Hit Effect */
+        .receptor.active {
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .receptor[data-pad="LEFT"].active { box-shadow: 0 0 20px #3b82f6; border-color: #3b82f6; }
+        .receptor[data-pad="DOWN"].active { box-shadow: 0 0 20px #a855f7; border-color: #a855f7; }
+        .receptor[data-pad="UP"].active { box-shadow: 0 0 20px #22c55e; border-color: #22c55e; }
+        .receptor[data-pad="RIGHT"].active { box-shadow: 0 0 20px #eab308; border-color: #eab308; }
+
+        /* Floating Note Arrows */
+        .note-arrow {
+            position: absolute;
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            will-change: transform, top;
+        }
+        .note-arrow svg {
+            width: 32px;
+            height: 32px;
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .note-arrow[data-pad="LEFT"] { background: rgba(59, 130, 246, 0.85); box-shadow: 0 0 12px #3b82f6; }
+        .note-arrow[data-pad="LEFT"] svg { stroke: #ffffff; }
+
+        .note-arrow[data-pad="DOWN"] { background: rgba(168, 85, 247, 0.85); box-shadow: 0 0 12px #a855f7; }
+        .note-arrow[data-pad="DOWN"] svg { stroke: #ffffff; }
+
+        .note-arrow[data-pad="UP"] { background: rgba(34, 197, 94, 0.85); box-shadow: 0 0 12px #22c55e; }
+        .note-arrow[data-pad="UP"] svg { stroke: #ffffff; }
+
+        .note-arrow[data-pad="RIGHT"] { background: rgba(234, 179, 8, 0.85); box-shadow: 0 0 12px #eab308; }
+        .note-arrow[data-pad="RIGHT"] svg { stroke: #ffffff; }
+
+        /* Floating Rating Feedback Text */
+        .hit-rating {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            pointer-events: none;
+            animation: rating-pop 0.4s ease-out forwards;
+        }
+        @keyframes rating-pop {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.7); }
+            50% { opacity: 1; transform: translate(-50%, -5px) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -20px) scale(1); }
+        }
     </style>
 </head>
 <body>
 
+    <!-- RHYTHM HIGHWAY (DDR STYLE OVERLAY - NO BACKGROUND) -->
+    <div id="rhythm-highway">
+        <div class="target-receptors">
+            <div class="receptor" data-pad="LEFT">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </div>
+            <div class="receptor" data-pad="DOWN">
+                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="receptor" data-pad="UP">
+                <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </div>
+            <div class="receptor" data-pad="RIGHT">
+                <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>
+            </div>
+        </div>
+        <div id="notes-container"></div>
+        <div id="rating-container"></div>
+    </div>
+
     <div id="hud-layer" class="ui-layer justify-between p-6 opacity-0 hidden">
         <div class="flex justify-between items-start w-full">
-            <div class="glass-panel px-6 py-3 rounded-2xl pointer-events-auto">
+            <div class="glass-panel px-6 py-3 rounded-2xl pointer-events-auto ml-auto md:ml-0">
                 <h1 class="text-xl font-extrabold tracking-widest text-white">CHRONO PAD</h1>
-                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Sharp Edition</p>
+                <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Rhythm Highway Edition</p>
             </div>
             <div class="flex gap-4 pointer-events-auto">
                 <button id="btn-pause-hud" class="glass-panel glass-btn px-5 py-3 rounded-2xl text-xl flex items-center justify-center">
@@ -97,6 +232,7 @@
                 <div class="glass-panel px-6 py-3 rounded-2xl text-right min-w-[140px]">
                     <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Score</p>
                     <p class="text-4xl font-extrabold text-white leading-none" id="score-display">0</p>
+                    <p class="text-xs font-bold text-green-400 mt-1 uppercase tracking-wider" id="combo-display">Combo 0x</p>
                 </div>
             </div>
         </div>
@@ -108,12 +244,11 @@
     </div>
 
     <div id="menu-layer" class="ui-layer items-center justify-center pointer-events-auto z-50 transition-opacity duration-300">
-        <!-- NO BLUR ON OVERLAY -->
         <div class="absolute inset-0 bg-black/60 pointer-events-none"></div>
         
         <div class="glass-panel p-10 rounded-3xl w-full max-w-md relative overflow-hidden pointer-events-auto">
             <h2 class="text-4xl font-extrabold mb-2 text-center text-white tracking-widest drop-shadow-lg">CHRONO PAD</h2>
-            <p class="text-green-400 text-center mb-8 text-sm font-bold tracking-widest uppercase">Rhythmic Forest</p>
+            <p class="text-green-400 text-center mb-8 text-sm font-bold tracking-widest uppercase">Rhythmic Forest DDR</p>
             
             <div class="space-y-5 mb-8">
                 <div>
@@ -122,7 +257,7 @@
                 </div>
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-300 mb-2">Game Speed (BPM)</label>
-                    <input type="number" id="bpm-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" value="110">
+                    <input type="number" id="bpm-input" class="glass-input w-full px-4 py-3 rounded-xl text-sm" value="120">
                 </div>
             </div>
             
@@ -131,10 +266,10 @@
             </button>
             
             <div class="mt-6 grid grid-cols-2 gap-2 text-center text-xs font-bold text-gray-400">
-                <span>8: Up (Green)</span>
-                <span>2: Down (Violet)</span>
-                <span>4: Left (Blue)</span>
-                <span>6: Right (Yellow)</span>
+                <span>8 / 🠉: Up (Green)</span>
+                <span>2 / 🠋: Down (Violet)</span>
+                <span>4 / 🠈: Left (Blue)</span>
+                <span>6 / 🠊: Right (Yellow)</span>
             </div>
         </div>
     </div>
@@ -157,33 +292,42 @@
 
     <script>
         // State Machine
-        const STATE = { MENU: 0, WATCHING: 1, PLAYING: 2, GAME_OVER: 3, PAUSED: 4 };
+        const STATE = { MENU: 0, PLAYING: 1, GAME_OVER: 2, PAUSED: 3 };
         let currentState = STATE.MENU;
         let score = 0;
-        let sequence = [];
-        let playerStep = 0;
-        let currentBPM = 110;
+        let combo = 0;
+        let currentBPM = 120;
         let beatInterval = 60000 / currentBPM;
         
-        // Pad Configuration - strictly mapping to numpad + color
-        const PAD_IDS = ['UP', 'LEFT', 'RIGHT', 'DOWN'];
+        // Pad Configuration & Arrow mapping
+        const PAD_IDS = ['LEFT', 'DOWN', 'UP', 'RIGHT'];
+        const PAD_X_POS = { LEFT: 0, DOWN: 74, UP: 148, RIGHT: 222 };
         const CONFIG = {
-            UP:    { code: 'Numpad8', color: 0x22c55e, alt: 'ArrowUp' },    // Green
-            LEFT:  { code: 'Numpad4', color: 0x3b82f6, alt: 'ArrowLeft' },  // Blue
-            RIGHT: { code: 'Numpad6', color: 0xeab308, alt: 'ArrowRight' }, // Yellow
-            DOWN:  { code: 'Numpad2', color: 0xa855f7, alt: 'ArrowDown' },  // Violet
-            CENTER:{ code: 'Numpad5', color: 0xffffff, alt: 'Enter' }       // White
+            UP:    { code: 'Numpad8', color: 0x22c55e, alt: 'ArrowUp' },
+            LEFT:  { code: 'Numpad4', color: 0x3b82f6, alt: 'ArrowLeft' },
+            RIGHT: { code: 'Numpad6', color: 0xeab308, alt: 'ArrowRight' },
+            DOWN:  { code: 'Numpad2', color: 0xa855f7, alt: 'ArrowDown' },
+            CENTER:{ code: 'Numpad5', color: 0xffffff, alt: 'Enter' }
         };
         const padData = {};
         const activeGlows = {};
-        const glowTimeouts = {}; // Added to manage strict ON/OFF timing
+        const glowTimeouts = {};
+
+        // Rhythm Game Engine Logic Variables
+        let activeNotes = [];
+        let noteIdCounter = 0;
+        let lastSpawnTime = 0;
+        let songStartTime = 0;
+        const TARGET_Y = 20; // Top position of receptors in px
+        const SPAWN_Y = window.innerHeight - 80; // Bottom spawn point
+        const NOTE_SPEED = 0.45; // Pixels per millisecond
 
         // Audio System
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
         const FREQS = { UP: 523.25, LEFT: 392.00, RIGHT: 659.25, DOWN: 329.63, CENTER: 880.00, FAIL: 150.00 };
 
-        function playTone(id, duration = 0.3) {
+        function playTone(id, duration = 0.2) {
             if (!audioCtx) audioCtx = new AudioContext();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             if (!FREQS[id]) return;
@@ -194,7 +338,7 @@
             osc.frequency.setValueAtTime(FREQS[id], audioCtx.currentTime);
             
             gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.05);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.03);
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
             
             osc.connect(gainNode);
@@ -221,29 +365,27 @@
             return (match && match[2].length === 11) ? match[2] : url;
         }
 
+        // 3D Scene Initialization
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = null; // STRICTLY NO FOG for maximum sharpness
+        scene.fog = null;
 
-        // Isometric-style Camera
         const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 40, 30); // Raised and pulled back for perfect view
+        camera.position.set(0, 40, 30);
         camera.lookAt(0, -2, 0);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // EXACT pixel ratio for crispness
+        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // Day / Night Cycle Configuration
-        // bg = Sky color, sun = Sun light color, ambient = Ambient light color
         const skyGradients = [
-            { bg: 0x050814, sun: 0x334466, ambient: 0x0a1020, sunInt: 0.1, ambInt: 0.3 }, // Night
-            { bg: 0x3a1f2d, sun: 0xff8855, ambient: 0x2d1b2e, sunInt: 0.6, ambInt: 0.6 }, // Dawn
-            { bg: 0x2a598a, sun: 0xffffff, ambient: 0x4a6a8a, sunInt: 1.0, ambInt: 0.8 }, // Day
-            { bg: 0x4a2520, sun: 0xff4422, ambient: 0x301515, sunInt: 0.5, ambInt: 0.5 }  // Dusk
+            { bg: 0x050814, sun: 0x334466, ambient: 0x0a1020, sunInt: 0.1, ambInt: 0.3 },
+            { bg: 0x3a1f2d, sun: 0xff8855, ambient: 0x2d1b2e, sunInt: 0.6, ambInt: 0.6 },
+            { bg: 0x2a598a, sun: 0xffffff, ambient: 0x4a6a8a, sunInt: 1.0, ambInt: 0.8 },
+            { bg: 0x4a2520, sun: 0xff4422, ambient: 0x301515, sunInt: 0.5, ambInt: 0.5 }
         ];
         
         scene.background = new THREE.Color(skyGradients[0].bg);
@@ -277,13 +419,13 @@
             water: new THREE.MeshStandardMaterial({ color: 0x1f7df0, flatShading: true, transparent: true, opacity: 0.85 })
         };
 
-        // Base Island
+        // Island Base
         const islandGeo = new THREE.CylinderGeometry(26, 18, 14, 32, 3);
         const posAttr = islandGeo.attributes.position;
         const vertex = new THREE.Vector3();
         for (let i = 0; i < posAttr.count; i++) {
             vertex.fromBufferAttribute(posAttr, i);
-            if (vertex.y > 0) vertex.y += (Math.random() - 0.5) * 2.0; // Uneven top
+            if (vertex.y > 0) vertex.y += (Math.random() - 0.5) * 2.0;
             posAttr.setXYZ(i, vertex.x, vertex.y, vertex.z);
         }
         islandGeo.computeVertexNormals();
@@ -292,7 +434,7 @@
         island.receiveShadow = true;
         sceneGroup.add(island);
 
-        // Center Stage (Base for Arrows)
+        // Center Stage
         const stage = new THREE.Mesh(new THREE.CylinderGeometry(11, 12, 1.5, 16), mats.stage);
         stage.position.y = -0.75;
         stage.receiveShadow = true;
@@ -305,7 +447,7 @@
             return { x: Math.cos(angle) * radius, z: Math.sin(angle) * radius };
         }
 
-        // Pine Trees
+        // Environment Details (Trees, Rocks, Mushrooms)
         for(let i=0; i<16; i++) {
             const p = randomEdgePos(13, 24);
             const tree = new THREE.Group();
@@ -328,33 +470,6 @@
             sceneGroup.add(tree);
         }
 
-        // Log Benches
-        for(let i=0; i<3; i++) {
-            const p = randomEdgePos(12, 16);
-            const bench = new THREE.Group();
-            
-            const log = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 4, 6), mats.wood);
-            log.rotation.z = Math.PI / 2;
-            log.position.y = 1.2;
-            log.castShadow = true;
-            bench.add(log);
-
-            const leg1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1, 5), mats.wood);
-            leg1.position.set(-1.2, 0.5, 0);
-            leg1.castShadow = true;
-            bench.add(leg1);
-
-            const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1, 5), mats.wood);
-            leg2.position.set(1.2, 0.5, 0);
-            leg2.castShadow = true;
-            bench.add(leg2);
-
-            bench.position.set(p.x, 0, p.z);
-            bench.lookAt(0, 0, 0); // Face center
-            sceneGroup.add(bench);
-        }
-
-        // Low Poly Rocks
         for(let i=0; i<8; i++) {
             const p = randomEdgePos(12, 23);
             const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5 + Math.random(), 0), mats.rock);
@@ -365,12 +480,10 @@
             sceneGroup.add(rock);
         }
 
-        // Animated Geometric Mushrooms
         const animatedMushrooms = [];
         for(let i=0; i<12; i++) {
             const p = randomEdgePos(11, 20);
             const shroom = new THREE.Group();
-            
             const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 1.2, 5), mats.mushroomStem);
             stem.position.y = 0.6;
             stem.castShadow = true;
@@ -387,7 +500,6 @@
             animatedMushrooms.push(shroom);
         }
 
-        // Waterfall
         const waterfall = new THREE.Mesh(new THREE.BoxGeometry(6, 16, 2), mats.water);
         waterfall.position.set(-18, -6, -15);
         waterfall.rotation.y = Math.PI / 4;
@@ -407,11 +519,10 @@
         const arrowGeo = createArrowGeometry();
 
         function createPad(id, x, z, rotY, configItem) {
-            // CRITICAL: Materials are dark by default. emissiveIntensity is 0.
             const mat = new THREE.MeshStandardMaterial({
                 color: configItem.color,
                 emissive: configItem.color,
-                emissiveIntensity: 0.0, // Dark by default
+                emissiveIntensity: 0.0,
                 roughness: 0.3,
                 metalness: 0.1,
                 flatShading: true
@@ -425,7 +536,6 @@
             mesh.receiveShadow = true;
             sceneGroup.add(mesh);
 
-            // Light is OFF by default (intensity 0)
             const pLight = new THREE.PointLight(configItem.color, 0, 20);
             pLight.position.set(x, 2, z);
             sceneGroup.add(pLight);
@@ -434,13 +544,11 @@
             activeGlows[id] = 0;
         }
 
-        // Pad layout
         createPad('UP', 0, -5.5, 0, CONFIG.UP);
         createPad('DOWN', 0, 5.5, Math.PI, CONFIG.DOWN);
         createPad('LEFT', -5.5, 0, Math.PI / 2, CONFIG.LEFT);
         createPad('RIGHT', 5.5, 0, -Math.PI / 2, CONFIG.RIGHT);
 
-        // Center Start Button
         const centerMat = new THREE.MeshStandardMaterial({ color: 0x888888, emissive: 0xffffff, emissiveIntensity: 0.0, roughness: 0.4, flatShading: true });
         const centerMesh = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 0.6, 8), centerMat);
         centerMesh.position.set(0, 0.3, 0);
@@ -454,7 +562,6 @@
         padData['CENTER'] = { mesh: centerMesh, mat: centerMat, light: centerLight, baseColor: 0xffffff };
         activeGlows['CENTER'] = 0;
 
-        // Floating Dust/Fireflies
         const particlesCount = 300;
         const posArray = new Float32Array(particlesCount * 3);
         for(let i=0; i<particlesCount; i++) {
@@ -479,7 +586,7 @@
             const el = document.getElementById(id);
             if(show) {
                 el.classList.remove('hidden');
-                void el.offsetWidth; // Force reflow
+                void el.offsetWidth;
                 el.style.opacity = '1';
             } else {
                 el.style.opacity = '0';
@@ -488,24 +595,36 @@
         }
 
         function triggerPadVisuals(id, durationMs) {
-            // Strict ON state
             activeGlows[id] = 1.0; 
-            if(padData[id]) padData[id].mesh.position.y = -0.2; // Push down effect
+            if(padData[id]) padData[id].mesh.position.y = -0.2;
 
-            // Clear any previous timeout to avoid flickering
             if (glowTimeouts[id]) clearTimeout(glowTimeouts[id]);
-            
-            // Strict OFF state after the rhythmic duration
             glowTimeouts[id] = setTimeout(() => {
                 activeGlows[id] = 0.0;
-            }, durationMs || (beatInterval * 0.5));
+            }, durationMs || 200);
+
+            // Trigger UI Receptor Glow
+            const receptor = document.querySelector(`.receptor[data-pad="${id}"]`);
+            if (receptor) {
+                receptor.classList.add('active');
+                setTimeout(() => receptor.classList.remove('active'), 120);
+            }
+        }
+
+        function displayHitRating(text, color) {
+            const container = document.getElementById('rating-container');
+            const el = document.createElement('div');
+            el.className = `hit-rating ${color}`;
+            el.innerText = text;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 400);
         }
 
         function initGame() {
             if(currentState === STATE.PAUSED) return;
             
             const ytVal = document.getElementById('yt-input').value;
-            currentBPM = parseInt(document.getElementById('bpm-input').value) || 110;
+            currentBPM = parseInt(document.getElementById('bpm-input').value) || 120;
             beatInterval = 60000 / currentBPM;
 
             if(isYtReady && ytVal) {
@@ -515,85 +634,59 @@
             }
 
             score = 0;
-            sequence = [];
+            combo = 0;
+            activeNotes.forEach(n => n.element.remove());
+            activeNotes = [];
+            
             document.getElementById('score-display').innerText = score;
+            document.getElementById('combo-display').innerText = `Combo ${combo}x`;
             
             toggleLayer('menu-layer', false);
             toggleLayer('pause-layer', false);
             toggleLayer('hud-layer', true);
             
-            currentState = STATE.WATCHING;
-            uiSetStatus("READY", "Prepare Numpad", "text-white");
-            
-            // Wait 2 beats before starting the first round
-            setTimeout(startRound, beatInterval * 2);
+            currentState = STATE.PLAYING;
+            uiSetStatus("PLAYING", "Follow the Rhythm", "text-green-400");
+            songStartTime = performance.now();
+            lastSpawnTime = songStartTime;
         }
 
-        let sequencePlaybackTimer;
+        // SVG Icons per direction
+        const SVG_PATHS = {
+            LEFT: '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>',
+            DOWN: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>',
+            UP: '<svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>',
+            RIGHT: '<svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>'
+        };
 
-        function startRound() {
-            playerStep = 0;
-            sequence.push(PAD_IDS[Math.floor(Math.random() * PAD_IDS.length)]);
-            currentState = STATE.WATCHING;
-            uiSetStatus("WATCH", "Memorize", "text-blue-400");
-
-            let i = 0;
-            const flashDuration = beatInterval * 0.5; // Flash lasts half a beat
+        function spawnNote() {
+            const padId = PAD_IDS[Math.floor(Math.random() * PAD_IDS.length)];
+            const container = document.getElementById('notes-container');
             
-            // Wait one beat before the sequence starts playing
-            setTimeout(() => {
-                sequencePlaybackTimer = setInterval(() => {
-                    if (currentState !== STATE.WATCHING) {
-                        clearInterval(sequencePlaybackTimer);
-                        return;
-                    }
-                    
-                    if (i < sequence.length) {
-                        const padId = sequence[i];
-                        triggerPadVisuals(padId, flashDuration);
-                        playTone(padId, flashDuration / 1000);
-                        i++;
-                    } else {
-                        clearInterval(sequencePlaybackTimer);
-                        // Transition to player turn after finishing
-                        setTimeout(() => {
-                            if (currentState === STATE.WATCHING) {
-                                currentState = STATE.PLAYING;
-                                uiSetStatus("YOUR TURN", "Repeat Sequence", "text-green-400");
-                            }
-                        }, beatInterval * 0.5);
-                    }
-                }, beatInterval); // Exactly syncs with BPM
-            }, beatInterval);
-        }
+            const noteEl = document.createElement('div');
+            noteEl.className = 'note-arrow';
+            noteEl.setAttribute('data-pad', padId);
+            noteEl.style.left = `${PAD_X_POS[padId]}px`;
+            noteEl.style.top = `${SPAWN_Y}px`;
+            noteEl.innerHTML = SVG_PATHS[padId];
+            container.appendChild(noteEl);
 
-        function gameOver() {
-            currentState = STATE.GAME_OVER;
-            uiSetStatus("SIGNAL LOST", "Press Num 5 to Restart", "text-red-500");
-            playTone('FAIL', 1.0);
-            if(isYtReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-            
-            // Flash all pads red
-            Object.values(padData).forEach(p => {
-                p.light.color.setHex(0xff0000);
-                p.light.intensity = 15;
-                p.mat.emissive.setHex(0xff0000);
-                p.mat.emissiveIntensity = 2.0;
+            const travelDistance = SPAWN_Y - TARGET_Y;
+            const targetTime = performance.now() + (travelDistance / NOTE_SPEED);
+
+            activeNotes.push({
+                id: noteIdCounter++,
+                padId: padId,
+                element: noteEl,
+                targetTime: targetTime,
+                hit: false
             });
-            setTimeout(() => {
-                // Reset colors back to normal
-                Object.keys(padData).forEach(id => {
-                    padData[id].light.color.setHex(padData[id].baseColor);
-                    padData[id].mat.emissive.setHex(padData[id].baseColor);
-                    activeGlows[id] = 0; // Turn off light
-                });
-            }, 800);
         }
 
-        function handleInput(id) {
-            if (id === 'CENTER') {
-                triggerPadVisuals(id, 200);
-                playTone(id, 0.2);
+        function handleInput(padId) {
+            if (padId === 'CENTER') {
+                triggerPadVisuals(padId, 200);
+                playTone(padId, 0.2);
                 if (currentState === STATE.MENU || currentState === STATE.GAME_OVER) {
                     if (!audioCtx) audioCtx = new AudioContext();
                     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -603,24 +696,48 @@
             }
 
             if (currentState !== STATE.PLAYING) return;
-            
-            // Visual and audio feedback strictly tied to rhythm
-            const flashDuration = beatInterval * 0.5;
-            triggerPadVisuals(id, flashDuration);
-            playTone(id, flashDuration / 1000);
 
-            if (sequence[playerStep] === id) {
-                playerStep++;
-                if (playerStep === sequence.length) {
-                    currentState = STATE.WATCHING;
-                    score++;
-                    document.getElementById('score-display').innerText = score;
-                    uiSetStatus("PERFECT", "Wait...", "text-yellow-400");
-                    // Wait before starting next round to keep rhythm
-                    setTimeout(startRound, beatInterval * 1.5);
+            triggerPadVisuals(padId, 150);
+
+            const now = performance.now();
+            // Find closest matching unhit note for this pad
+            let closestNote = null;
+            let minDiff = Infinity;
+
+            for (let note of activeNotes) {
+                if (note.padId === padId && !note.hit) {
+                    const diff = Math.abs(now - note.targetTime);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestNote = note;
+                    }
                 }
+            }
+
+            if (closestNote && minDiff < 180) { // Timing Window threshold
+                closestNote.hit = true;
+                closestNote.element.remove();
+
+                playTone(padId, 0.25);
+                combo++;
+
+                if (minDiff < 50) {
+                    score += 100;
+                    displayHitRating("PERFECT!", "text-yellow-400");
+                } else if (minDiff < 110) {
+                    score += 50;
+                    displayHitRating("GREAT!", "text-green-400");
+                } else {
+                    score += 20;
+                    displayHitRating("GOOD!", "text-blue-400");
+                }
+
+                document.getElementById('score-display').innerText = score;
+                document.getElementById('combo-display').innerText = `Combo ${combo}x`;
             } else {
-                gameOver();
+                // Mispress or bad timing
+                combo = 0;
+                document.getElementById('combo-display').innerText = `Combo ${combo}x`;
             }
         }
 
@@ -631,12 +748,11 @@
                 toggleLayer('pause-layer', false);
                 if(isYtReady && ytPlayer.playVideo) ytPlayer.playVideo();
                 currentState = STATE.PLAYING;
-                uiSetStatus("RESUMED", "Follow rhythm", "text-green-400");
+                uiSetStatus("PLAYING", "Follow rhythm", "text-green-400");
             } else {
                 currentState = STATE.PAUSED;
                 toggleLayer('pause-layer', true);
                 if(isYtReady && ytPlayer.pauseVideo) ytPlayer.pauseVideo();
-                clearInterval(sequencePlaybackTimer);
                 uiSetStatus("PAUSED", "", "text-gray-400");
             }
         }
@@ -690,9 +806,39 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime();
             const delta = clock.getDelta();
+            const now = performance.now();
 
-            // Smooth Day/Night Cycle interpolation
-            const cycleDuration = 100; // 100 seconds per full cycle
+            // DDR Rhythm Note Update & Spawning Logic
+            if (currentState === STATE.PLAYING) {
+                // Spawn notes aligned with BPM rhythm
+                if (now - lastSpawnTime >= beatInterval) {
+                    spawnNote();
+                    lastSpawnTime = now;
+                }
+
+                // Move active floating notes up towards receptors
+                for (let i = activeNotes.length - 1; i >= 0; i--) {
+                    const note = activeNotes[i];
+                    if (note.hit) continue;
+
+                    const remainingTime = note.targetTime - now;
+                    const currentY = TARGET_Y + (remainingTime * NOTE_SPEED);
+                    
+                    note.element.style.top = `${currentY}px`;
+
+                    // Handle Miss (note travels too far past receptor)
+                    if (currentY < TARGET_Y - 50) {
+                        displayHitRating("MISS", "text-red-500");
+                        combo = 0;
+                        document.getElementById('combo-display').innerText = `Combo ${combo}x`;
+                        note.element.remove();
+                        activeNotes.splice(i, 1);
+                    }
+                }
+            }
+
+            // Day / Night Environment Cycle
+            const cycleDuration = 100;
             const cycleTime = (time % cycleDuration) / cycleDuration;
             const segment = cycleTime * 4;
             const idx1 = Math.floor(segment) % 4;
@@ -708,21 +854,17 @@
             mainLight.color.copy(c1.setHex(env1.sun)).lerp(c2.setHex(env2.sun), lerpFactor);
             mainLight.intensity = env1.sunInt + (env2.sunInt - env1.sunInt) * lerpFactor;
             
-            // Rotating Sun position
             const sunAngle = cycleTime * Math.PI * 2;
             mainLight.position.x = Math.cos(sunAngle) * 40;
             mainLight.position.y = Math.sin(sunAngle) * 30 + 10;
             mainLight.position.z = Math.sin(sunAngle) * -20;
 
-            // Subtle Island Float
             sceneGroup.position.y = Math.sin(time * 0.8) * 0.3;
 
-            // Animate Mushrooms Breathing
             animatedMushrooms.forEach((shroom, i) => {
                 shroom.scale.y = 1.0 + Math.sin(time * 2.5 + i) * 0.15;
             });
 
-            // Particles Drift
             const positions = particleSystem.geometry.attributes.position.array;
             for(let i = 0; i < particlesCount; i++) {
                 let iy = i * 3 + 1;
@@ -733,22 +875,19 @@
             }
             particleSystem.geometry.attributes.position.needsUpdate = true;
 
-            // Pad Glowing & Physics Logic (CRITICAL FIX)
+            // 3D Pad Glowing Logic
             for (let id in padData) {
                 const mat = padData[id].mat;
                 const light = padData[id].light;
 
                 if (activeGlows[id] > 0) {
-                    // Intense glow when explicitly active
                     mat.emissiveIntensity = 3.0; 
                     light.intensity = 25; 
                 } else {
-                    // Completely OFF when inactive
                     mat.emissiveIntensity = 0;
                     light.intensity = 0;
                 }
                 
-                // Spring back up smoothly if pushed down
                 const targetY = 0.3;
                 padData[id].mesh.position.y += (targetY - padData[id].mesh.position.y) * 0.2;
             }
